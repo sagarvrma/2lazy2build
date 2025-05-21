@@ -60,12 +60,44 @@ def clean_price_string(price):
     return float(match.group(0).replace("$", "").replace(",", "")) if match else None
 
 def extract_brand(title):
+    title = title.lower()
+    # Remove the word 'refurbished' from the title if it's present
+    title = title.replace("refurbished", "").strip()
+    
     title_tokens = title.split()
     if not title_tokens:
         return None
-    if title_tokens[0].lower() in ["gaming", "desktop", "pc", "computer"]:
+    
+    # Check if the first token is a known brand or a prefix
+    if title_tokens[0] in ["gaming", "desktop", "pc", "computer"]:
         return " ".join(title_tokens[:2])
+    
+    # Return the first token as the brand
     return title_tokens[0]
+
+
+def classify_device_type(title):
+    # Convert the title to lowercase for easier matching
+    title_lower = title.lower()
+
+    # Keywords for laptops and desktops
+    laptop_keywords = ["laptop"]
+    desktop_keywords = ["desktop", "tower", "pc", "gaming pc", "all-in-one"]
+
+    # Check if both laptop and desktop keywords exist
+    if any(keyword in title_lower for keyword in laptop_keywords) and any(keyword in title_lower for keyword in desktop_keywords):
+        return "unknown"  # Ignore listings with both laptop and desktop keywords
+
+    # Check if the title mentions a laptop
+    if any(keyword in title_lower for keyword in laptop_keywords):
+        return "laptop"
+
+    # Check if the title mentions a desktop
+    if any(keyword in title_lower for keyword in desktop_keywords):
+        return "desktop"
+
+    # Default to unknown if no keyword matches
+    return "unknown"
 
 def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_refurb=False, min_ram=None, min_storage=None):
     items = []
@@ -73,10 +105,12 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(user_agent="Mozilla/5.0")
         page = context.new_page()
+        
         for cpu in cpu_list:
             for gpu in gpu_list:
                 query = f"{cpu} {gpu}".replace(" ", "+")
                 url = f"https://www.newegg.com/p/pl?d={query}"
+                
                 try:
                     page.goto(url, timeout=90000)
                     try:
@@ -89,6 +123,7 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
                 except Exception as e:
                     print(f"❌ Newegg failed for {query}: {e}")
                     continue
+                
                 soup = BeautifulSoup(html, "html.parser")
                 results = soup.select(".item-cell, .item-container")
                 print(f"\nScraped {len(results)} items from: {url}")
@@ -100,14 +135,22 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
                     stock_elem = item.select_one(".item-promo")
                     img_elem = item.select_one("img")
                     image_url = img_elem["src"] if img_elem and "src" in img_elem.attrs else None
+                    
+                    # Extract and clean title
                     title = title_elem.get_text(strip=True) if title_elem else "No title"
-                    title_lower = title.lower()
+                    title = title.replace("refurbished", "").strip()  # Remove 'refurbished' if present
+                    title = " ".join(title.split())  # Remove multiple spaces between words
+                    
+                    # Classify as laptop or desktop
+                    device_type = classify_device_type(title)
+
                     price = price_elem.get_text(strip=True) if price_elem else "N/A"
                     link = title_elem["href"] if title_elem else None
                     in_stock = not ("OUT OF STOCK" in stock_elem.get_text(strip=True).upper() if stock_elem else False)
-                    condition = extract_condition(title_lower)
-                    matched_cpu = match_component(title_lower, cpu_list)
-                    matched_gpu = match_component(title_lower, gpu_list)
+                    condition = extract_condition(title.lower())
+                    matched_cpu = match_component(title.lower(), cpu_list)
+                    matched_gpu = match_component(title.lower(), gpu_list)
+                    
                     print(f"- Title: {title}")
                     print(f"  CPU match: {matched_cpu}, GPU match: {matched_gpu}, Price: {price}")
                     if not matched_cpu or not matched_gpu:
@@ -134,6 +177,8 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
                     if min_storage and (storage_gb is None or storage_gb < min_storage):
                         print("  ❌ Skipped: Storage too low")
                         continue
+                    
+                    # Add the device type to the JSON object
                     items.append({
                         "title": title,
                         "brand": extract_brand(title),
@@ -147,10 +192,12 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
                         "matched_gpu": matched_gpu,
                         "ram_gb": ram_gb,
                         "storage_gb": storage_gb,
+                        "device_type": device_type,  # Added device type
                         "source": "Newegg"
                     })
         browser.close()
     return items
+
 
 def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter_refurb=False, min_ram=None, min_storage=None):
     items = []
@@ -166,8 +213,6 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
             try:
                 page.goto(url, timeout=60000)
                 page.wait_for_selector(".s-item", timeout=10000)
-                page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
-                page.wait_for_timeout(3000)
                 html = page.content()
             except Exception as e:
                 print(f"❌ eBay request failed for {gpu_query}: {e}")
@@ -186,6 +231,10 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
 
                 title = title_elem.get_text(strip=True)
                 title_lower = title.lower()
+
+                # Classify as laptop or desktop
+                device_type = classify_device_type(title)
+
                 price = price_elem.get_text(strip=True)
                 link = link_elem["href"]
                 condition = extract_condition(title_lower)
@@ -229,19 +278,17 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
                     print("  ❌ Skipped: Storage too low")
                     continue
 
-                # Extract and normalize brand
                 brand = extract_brand(title)
                 brand_lower = brand.lower()
                 if brand_lower in ["gaming", "computer", "pc", "desktop", "gaming computer"]:
                     brand = "Generic"
                     brand_lower = "generic"
 
-                # Use static logo immediately (no product page visit)
                 known_brands = ["hp", "msi", "dell", "asus", "acer", "cyberpowerpc", "ibuypower"]
                 if brand_lower in known_brands:
-                    image_url = f"/static/logos/{brand_lower}.png"
+                    image_url = f"http://localhost:5000/static/logos/{brand_lower}.png"
                 else:
-                    image_url = "/static/logos/generic.png"
+                    image_url = "http://localhost:5000/static/logos/generic.png"
 
                 items.append({
                     "title": title,
@@ -255,12 +302,13 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
                     "matched_gpu": matched_gpu,
                     "ram_gb": ram_gb,
                     "storage_gb": storage_gb,
+                    "device_type": device_type,  # Added device type
                     "source": "eBay"
                 })
 
         browser.close()
-    print(f"\n✅ Scraped {len(items)} total eBay results")
     return items
+
 
 
 

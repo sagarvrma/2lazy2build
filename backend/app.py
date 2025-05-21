@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 from scraper import scrape_newegg, scrape_ebay
 import os
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 @app.route("/scrape")
 def scrape():
@@ -39,10 +41,18 @@ def scrape():
 
     return jsonify(results + ebay_results)
 
-# Serve logo images (e.g., /static/logos/hp.png)
 @app.route("/static/logos/<path:filename>")
 def serve_logo(filename):
-    return send_from_directory(os.path.join("static", "logos"), filename)
+    logos_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static", "logos"))
+    print("Serving from:", logos_dir)
+    print("Requesting file:", filename)
+
+    full_path = os.path.join(logos_dir, filename)
+    if not os.path.isfile(full_path):
+        print("❌ File not found:", full_path)
+
+    return send_from_directory(logos_dir, filename)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
