@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { CheckIcon, ChevronsUpDownIcon, FilterIcon, XIcon } from 'lucide-react'
+import { FilterIcon, XIcon } from 'lucide-react'
 
 
 interface PC {
@@ -31,8 +31,7 @@ const gpuOptions = [
 ]
 const brandOptions = ['All', 'hp', 'msi', 'dell', 'asus', 'acer', 'cyberpowerpc', 'ibuypower', 'generic']
 const sortOptions = ['Relevance', 'Price: Low to High', 'Price: High to Low']
-const deviceTypeOptions = ['Both', 'Desktop', 'Laptop']
-const sourceOptions = ['All', 'Newegg', 'eBay', 'Best Buy']
+
 
 function MultiSelect({ label, options, selected, setSelected }: {
   label: string
@@ -103,7 +102,7 @@ export default function Home() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scrape?${params.toString()}`)
       const data = await res.json()
-      let filtered = data.map((item: any, i: number) => {
+      let filtered = data.map((item: Record<string, any>, i: number) => {
         const pc: PC = {
           id: `pc-${i}`,
           title: item.title,
@@ -149,17 +148,6 @@ export default function Home() {
     }
   }
 
-  const toggleCPU = (cpu: string) => {
-    setSelectedCPUs(prev => 
-      prev.includes(cpu) ? prev.filter(c => c !== cpu) : [...prev, cpu]
-    )
-  }
-
-  const toggleGPU = (gpu: string) => {
-    setSelectedGPUs(prev => 
-      prev.includes(gpu) ? prev.filter(g => g !== gpu) : [...prev, gpu]
-    )
-  }
 
   const sortResults = (direction: 'asc' | 'desc') => {
     setCurrentSort(direction)
@@ -194,10 +182,10 @@ export default function Home() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-lg">Don't forget to bookmark your favorite deals!</h3>
-                  <p className="text-gray-300">
-                    Use your browser's bookmark feature to save listings you're interested in for later.
-                  </p>
+                  <h3 className="font-bold text-white text-lg">Don&apos;t forget to bookmark your favorite deals!</h3>
+                  <p className="text-gray-300 mb-1">
+                    Use your browser&apos;s bookmark feature to save listings you&apos;re interested in for later.</p>
+                
                 </div>
               </div>
               <button 
