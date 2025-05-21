@@ -1,9 +1,9 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "backend/app.py",
-      "use": "@vercel/python"
+    { 
+      "src": "backend/**/*.py", 
+      "use": "@vercel/python" 
     },
     {
       "src": "backend/static/**",
@@ -11,13 +11,13 @@
     }
   ],
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/backend/static/$1"
+    { 
+      "src": "/static/(.*)", 
+      "dest": "/backend/static/$1" 
     },
-    {
-      "src": "/(.*)",
-      "dest": "/backend/app.py"
+    { 
+      "src": "/(.*)", 
+      "dest": "/backend/app.py" 
     }
   ]
 }
