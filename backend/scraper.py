@@ -308,10 +308,3 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
 
         browser.close()
     return items
-
-
-
-
-
-
-
