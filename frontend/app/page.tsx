@@ -101,7 +101,7 @@ export default function Home() {
     if (selectedSource !== 'All') params.set('source', selectedSource)
 
     try {
-      const res = await fetch(`http://localhost:5000/scrape?${params.toString()}`)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scrape?${params.toString()}`)
       const data = await res.json()
       let filtered = data.map((item: any, i: number) => {
         const pc: PC = {

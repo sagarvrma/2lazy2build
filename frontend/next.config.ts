@@ -12,13 +12,37 @@ const nextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '5000',
+        protocol: 'https',
+        hostname: '2lazy2build.vercel.app',
         pathname: '/static/logos/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '1000logos.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.freebiesupply.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'edgeup.asus.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'static.vecteezy.com',
+        pathname: '/**',
       },
     ],
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig
