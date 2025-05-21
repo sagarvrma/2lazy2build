@@ -102,6 +102,7 @@ export default function Home() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scrape?${params.toString()}`)
       const data = await res.json()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let filtered = data.map((item: Record<string, any>, i: number) => {
         const pc: PC = {
           id: `pc-${i}`,
