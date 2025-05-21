@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, Fragment } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
-import { Listbox, Transition } from '@headlessui/react'
 import { CheckIcon, ChevronsUpDownIcon, FilterIcon, XIcon } from 'lucide-react'
+
 
 interface PC {
   id: string
