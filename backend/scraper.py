@@ -102,7 +102,7 @@ def classify_device_type(title):
 def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_refurb=False, min_ram=None, min_storage=None):
     items = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(executable_path="/tmp/pw/chromium-1169/chrome-linux/chrome", headless=True)
         context = browser.new_context(user_agent="Mozilla/5.0")
         page = context.new_page()
         
@@ -202,7 +202,7 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
 def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter_refurb=False, min_ram=None, min_storage=None):
     items = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(executable_path="/tmp/pw/chromium-1169/chrome-linux/chrome", headless=True)
         context = browser.new_context(user_agent="Mozilla/5.0")
         page = context.new_page()
 
