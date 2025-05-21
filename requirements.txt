@@ -1,0 +1,7 @@
+Flask
+flask_cors
+requests
+beautifulsoup4
+playwright
+serverless-wsgi
+Flask-Caching
