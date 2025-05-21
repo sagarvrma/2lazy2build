@@ -1,9 +1,10 @@
+import os
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/tmp/pw"
 import logging
 import traceback
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from scraper import scrape_newegg, scrape_ebay
-import os
 from serverless_wsgi import handle_request  # Required for Vercel
 
 # Set up logging
