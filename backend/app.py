@@ -2,7 +2,7 @@ import logging
 import traceback
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from backend.scraper import scrape_newegg, scrape_ebay
+from scraper import scrape_newegg, scrape_ebay
 import os
 from serverless_wsgi import handle_request  # Required for Vercel
 
