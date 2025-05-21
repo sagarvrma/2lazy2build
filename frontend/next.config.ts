@@ -13,11 +13,6 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '2lazy2build.vercel.app',
-        pathname: '/static/logos/**',
-      },
-      {
-        protocol: 'https',
         hostname: '1000logos.net',
         pathname: '/**',
       },
