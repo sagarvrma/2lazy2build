@@ -232,9 +232,7 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
                 title = title_elem.get_text(strip=True)
                 title_lower = title.lower()
 
-                # Classify as laptop or desktop
                 device_type = classify_device_type(title)
-
                 price = price_elem.get_text(strip=True)
                 link = link_elem["href"]
                 condition = extract_condition(title_lower)
@@ -284,11 +282,17 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
                     brand = "Generic"
                     brand_lower = "generic"
 
-                known_brands = ["hp", "msi", "dell", "asus", "acer", "cyberpowerpc", "ibuypower"]
-                if brand_lower in known_brands:
-                    image_url = f"http://localhost:5000/static/logos/{brand_lower}.png"
-                else:
-                    image_url = "http://localhost:5000/static/logos/generic.png"
+                logo_sources = {
+                    "msi": "https://1000logos.net/wp-content/uploads/2018/10/MSI-Logo-500x281.png",
+                    "hp": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/HP_logo_2012.svg/2048px-HP_logo_2012.svg.png",
+                    "dell": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Dell_Logo.svg/300px-Dell_Logo.svg.png",
+                    "acer": "https://static.vecteezy.com/system/resources/previews/019/766/411/non_2x/acer-logo-acer-icon-transparent-free-png.png",
+                    "asus": "https://cdn.freebiesupply.com/logos/large/2x/asus-6630-logo-png-transparent.png",
+                    "cyberpowerpc": "https://1000logos.net/wp-content/uploads/2020/09/CyberPowerPC-Logo.jpg",
+                    "ibuypower": "https://edgeup.asus.com/wp-content/uploads/2015/04/iBuyPower-Logo-resized.jpg",
+                }
+
+                image_url = logo_sources.get(brand_lower, "https://2lazy2build.vercel.app/static/logos/generic.png")
 
                 items.append({
                     "title": title,
@@ -302,7 +306,7 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
                     "matched_gpu": matched_gpu,
                     "ram_gb": ram_gb,
                     "storage_gb": storage_gb,
-                    "device_type": device_type,  # Added device type
+                    "device_type": device_type,
                     "source": "eBay"
                 })
 
