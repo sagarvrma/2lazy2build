@@ -179,6 +179,24 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
                     
                     if not results_found:
                         print(f"⚠️ No results found with any selector for: {url}")
+                        # Debug: Let's see what's actually on the page
+                        html = page.content()
+                        print(f"🔍 Page title: {page.title()}")
+                        print(f"🔍 Page URL after navigation: {page.url}")
+                        print(f"🔍 HTML length: {len(html)} characters")
+                        
+                        # Check for common blocking indicators
+                        if "captcha" in html.lower():
+                            print("🚫 CAPTCHA detected")
+                        elif "blocked" in html.lower():
+                            print("🚫 Blocking message detected")
+                        elif "access denied" in html.lower():
+                            print("🚫 Access denied detected")
+                        elif len(html) < 1000:
+                            print("🚫 Suspiciously short HTML response")
+                        else:
+                            print("🔍 First 500 chars of HTML:")
+                            print(html[:500])
                         continue
                         
                     # Wait a bit more for dynamic content
