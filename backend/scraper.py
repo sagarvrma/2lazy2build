@@ -46,13 +46,32 @@ def match_component(title_lower, options):
     title_lower = re.sub(r"[^a-z0-9\s]", " ", title_lower)
     title_tokens = re.sub(r"\s+", " ", title_lower).strip().split()
     title_token_str = " ".join(title_tokens)
+    
     for option in options:
         option_clean = option.lower()
         for word in noise_words + ["rtx"]:
             option_clean = option_clean.replace(word, " ")
         option_clean = re.sub(r"\s+", " ", option_clean).strip()
-        if f" {option_clean} " in f" {title_token_str} ":
-            return option
+        
+        # Enhanced CPU matching for Intel processors
+        if option_clean in ["i7", "i5", "i9"]:
+            # Match variations like "i7-14700", "core i7", "i7 14th", etc.
+            # But ONLY for the specific CPU type selected (i7 matches i7 variants, not i5 or i9)
+            patterns = [
+                f" {option_clean} ",           # exact match: " i7 "
+                f" {option_clean}-",           # i7-14700
+                f" {option_clean}\\d",         # i714700  
+                f"{option_clean}-\\d",         # i7-14
+                f"{option_clean}\\s+\\d",      # i7 14
+            ]
+            
+            for pattern in patterns:
+                if re.search(pattern, f" {title_token_str} "):
+                    return option
+        else:
+            # Original matching for other components
+            if f" {option_clean} " in f" {title_token_str} ":
+                return option
     return None
 
 def clean_price_string(price):
@@ -74,7 +93,6 @@ def extract_brand(title):
     
     # Return the first token as the brand
     return title_tokens[0]
-
 
 def classify_device_type(title):
     # Convert the title to lowercase for easier matching
@@ -102,9 +120,29 @@ def classify_device_type(title):
 def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_refurb=False, min_ram=None, min_storage=None):
     items = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(user_agent="Mozilla/5.0")
+        # Use more realistic browser settings
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                '--disable-blink-features=AutomationControlled',
+                '--disable-web-security',
+                '--disable-features=VizDisplayCompositor'
+            ]
+        )
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            viewport={'width': 1920, 'height': 1080}
+        )
         page = context.new_page()
+        
+        # Add extra headers to look more like a real browser
+        page.set_extra_http_headers({
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        })
         
         for cpu in cpu_list:
             for gpu in gpu_list:
@@ -112,23 +150,57 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
                 url = f"https://www.newegg.com/p/pl?d={query}"
                 
                 try:
-                    page.goto(url, timeout=90000)
-                    try:
-                        page.wait_for_selector(".item-cell, .item-container", timeout=20000)
-                    except:
-                        print(f"⚠️ Timeout waiting for results on: {url}")
+                    print(f"🔄 Trying Newegg: {url}")
+                    
+                    # Navigate with longer timeout
+                    page.goto(url, timeout=120000, wait_until='networkidle')
+                    
+                    # Add random delay to seem more human
+                    page.wait_for_timeout(3000 + (hash(query) % 3000))
+                    
+                    # Try multiple selectors in case they changed
+                    selectors_to_try = [
+                        ".item-cell, .item-container",
+                        ".item-wrap",
+                        "[data-testid='item-cell']",
+                        ".item-info"
+                    ]
+                    
+                    results_found = False
+                    for selector in selectors_to_try:
+                        try:
+                            page.wait_for_selector(selector, timeout=15000)
+                            results_found = True
+                            print(f"✅ Found elements with selector: {selector}")
+                            break
+                        except:
+                            print(f"❌ Selector failed: {selector}")
+                            continue
+                    
+                    if not results_found:
+                        print(f"⚠️ No results found with any selector for: {url}")
                         continue
+                        
+                    # Wait a bit more for dynamic content
                     page.wait_for_timeout(5000)
                     html = page.content()
+                    
                 except Exception as e:
                     print(f"❌ Newegg failed for {query}: {e}")
                     continue
                 
                 soup = BeautifulSoup(html, "html.parser")
                 results = soup.select(".item-cell, .item-container")
-                print(f"\nScraped {len(results)} items from: {url}")
+                print(f"📦 Scraped {len(results)} items from: {url}")
+                
+                if not results:
+                    # Try alternative selectors
+                    results = soup.select(".item-wrap") or soup.select("[data-testid='item-cell']")
+                    print(f"📦 Alternative scraping found {len(results)} items")
+                
                 if not results:
                     continue
+                    
                 for item in results:
                     title_elem = item.select_one(".item-title")
                     price_elem = item.select_one(".price-current")
