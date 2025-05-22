@@ -1,22 +1,7 @@
-import subprocess
-import sys
 import re
 import time
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
-
-def ensure_playwright_browsers():
-    """Install Playwright browsers if they don't exist"""
-    try:
-        subprocess.run([
-            sys.executable, "-m", "playwright", "install", "chromium"
-        ], check=True, capture_output=True)
-        print("✅ Playwright browsers installed")
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️ Browser install warning: {e}")
-
-# Install browsers on import
-ensure_playwright_browsers()
 
 def extract_condition(title_lower):
     if "refurb" in title_lower:
