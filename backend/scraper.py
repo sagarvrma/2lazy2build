@@ -118,6 +118,11 @@ def classify_device_type(title):
     return "unknown"
 
 def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_refurb=False, min_ram=None, min_storage=None):
+    # Temporarily disable Newegg due to anti-bot blocking
+    print("⚠️ Newegg scraping temporarily disabled due to anti-bot protection")
+    return []
+    
+    # Original code commented out for now
     items = []
     with sync_playwright() as p:
         # Use more realistic browser settings
