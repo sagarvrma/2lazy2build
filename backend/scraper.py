@@ -1,7 +1,22 @@
+import subprocess
+import sys
 import re
 import time
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
+
+def ensure_playwright_browsers():
+    """Install Playwright browsers if they don't exist"""
+    try:
+        subprocess.run([
+            sys.executable, "-m", "playwright", "install", "chromium"
+        ], check=True, capture_output=True)
+        print("✅ Playwright browsers installed")
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️ Browser install warning: {e}")
+
+# Install browsers on import
+ensure_playwright_browsers()
 
 def extract_condition(title_lower):
     if "refurb" in title_lower:
@@ -102,7 +117,7 @@ def classify_device_type(title):
 def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_refurb=False, min_ram=None, min_storage=None):
     items = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path="/tmp/pw/chromium-1169/chrome-linux/chrome", headless=True)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context(user_agent="Mozilla/5.0")
         page = context.new_page()
         
@@ -202,7 +217,7 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
 def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter_refurb=False, min_ram=None, min_storage=None):
     items = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path="/tmp/pw/chromium-1169/chrome-linux/chrome", headless=True)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context(user_agent="Mozilla/5.0")
         page = context.new_page()
 
