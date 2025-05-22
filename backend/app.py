@@ -1,5 +1,5 @@
 import os
-os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/tmp/pw"
+#os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/tmp/pw"
 import logging
 import traceback
 from flask import Flask, request, jsonify, send_from_directory
