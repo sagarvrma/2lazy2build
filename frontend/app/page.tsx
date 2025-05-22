@@ -89,8 +89,18 @@ export default function Home() {
     setSearched(true)
     
     const params = new URLSearchParams()
-    if (selectedCPUs.length) params.set('cpu', selectedCPUs.join(','))
-    if (selectedGPUs.length) params.set('gpu', selectedGPUs.join(','))
+    if (selectedCPUs.length) {
+      const cpuValues = selectedCPUs.map(cpu => 
+        cpu.replace('Intel ', '').replace('AMD ', '').toLowerCase()
+      )
+      params.set('cpu', cpuValues.join(','))
+    }
+    if (selectedGPUs.length) {
+      const gpuValues = selectedGPUs.map(gpu => 
+        gpu.replace('RTX ', 'rtx').replace('RX ', 'rx').toLowerCase()
+      )
+      params.set('gpu', gpuValues.join(','))
+    }
     if (maxPrice) params.set('max_price', maxPrice)
     if (minRAM) params.set('min_ram', minRAM)
     if (minStorage) params.set('min_storage', minStorage)
