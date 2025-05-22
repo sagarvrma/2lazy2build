@@ -118,11 +118,14 @@ def classify_device_type(title):
     return "unknown"
 
 def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_refurb=False, min_ram=None, min_storage=None):
-    # Temporarily disable Newegg due to anti-bot blocking
-    print("⚠️ Newegg scraping temporarily disabled due to anti-bot protection")
+    # TODO: Newegg scraping temporarily disabled due to anti-bot protection
+    # Working on implementing proxy rotation and advanced anti-bot bypassing
+    print("⚠️ Newegg scraping in development - anti-bot protection bypass in progress")
     return []
-    
-    # Original code commented out for now
+
+    # NEWEGG SCRAPER - TEMPORARILY COMMENTED OUT
+    # Will be re-enabled once anti-bot protection is resolved
+    """
     items = []
     with sync_playwright() as p:
         # Use more realistic browser settings
@@ -184,24 +187,6 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
                     
                     if not results_found:
                         print(f"⚠️ No results found with any selector for: {url}")
-                        # Debug: Let's see what's actually on the page
-                        html = page.content()
-                        print(f"🔍 Page title: {page.title()}")
-                        print(f"🔍 Page URL after navigation: {page.url}")
-                        print(f"🔍 HTML length: {len(html)} characters")
-                        
-                        # Check for common blocking indicators
-                        if "captcha" in html.lower():
-                            print("🚫 CAPTCHA detected")
-                        elif "blocked" in html.lower():
-                            print("🚫 Blocking message detected")
-                        elif "access denied" in html.lower():
-                            print("🚫 Access denied detected")
-                        elif len(html) < 1000:
-                            print("🚫 Suspiciously short HTML response")
-                        else:
-                            print("🔍 First 500 chars of HTML:")
-                            print(html[:500])
                         continue
                         
                     # Wait a bit more for dynamic content
@@ -233,8 +218,8 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
                     
                     # Extract and clean title
                     title = title_elem.get_text(strip=True) if title_elem else "No title"
-                    title = title.replace("refurbished", "").strip()  # Remove 'refurbished' if present
-                    title = " ".join(title.split())  # Remove multiple spaces between words
+                    title = title.replace("refurbished", "").strip()
+                    title = " ".join(title.split())
                     
                     # Classify as laptop or desktop
                     device_type = classify_device_type(title)
@@ -287,12 +272,12 @@ def scrape_newegg(cpu_list, gpu_list, max_price, filter_in_stock=False, filter_r
                         "matched_gpu": matched_gpu,
                         "ram_gb": ram_gb,
                         "storage_gb": storage_gb,
-                        "device_type": device_type,  # Added device type
+                        "device_type": device_type,
                         "source": "Newegg"
                     })
         browser.close()
     return items
-
+    """
 
 def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter_refurb=False, min_ram=None, min_storage=None):
     items = []
@@ -320,6 +305,7 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
                 price_elem = card.select_one(".s-item__price")
                 link_elem = card.select_one("a.s-item__link")
                 seller_elem = card.select_one(".s-item__seller-info-text, .s-item__etrs-text")
+                img_elem = card.select_one(".s-item__image img")
 
                 if not all([title_elem, price_elem, link_elem]):
                     continue
@@ -377,17 +363,27 @@ def scrape_ebay(cpu_list, gpu_list, max_price=None, min_seller_rating=98, filter
                     brand = "Generic"
                     brand_lower = "generic"
 
-                logo_sources = {
-                    "msi": "https://1000logos.net/wp-content/uploads/2018/10/MSI-Logo-500x281.png",
-                    "hp": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/HP_logo_2012.svg/2048px-HP_logo_2012.svg.png",
-                    "dell": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Dell_Logo.svg/300px-Dell_Logo.svg.png",
-                    "acer": "https://static.vecteezy.com/system/resources/previews/019/766/411/non_2x/acer-logo-acer-icon-transparent-free-png.png",
-                    "asus": "https://cdn.freebiesupply.com/logos/large/2x/asus-6630-logo-png-transparent.png",
-                    "cyberpowerpc": "https://1000logos.net/wp-content/uploads/2020/09/CyberPowerPC-Logo.jpg",
-                    "ibuypower": "https://edgeup.asus.com/wp-content/uploads/2015/04/iBuyPower-Logo-resized.jpg",
-                }
-
-                image_url = logo_sources.get(brand_lower, "https://2lazy2build.vercel.app/static/logos/generic.png")
+                # Extract actual product image from eBay listing
+                image_url = None
+                if img_elem and img_elem.get("src"):
+                    image_url = img_elem["src"]
+                    # eBay sometimes uses data-src for lazy loading
+                    if not image_url or "placeholder" in image_url.lower():
+                        if img_elem.get("data-src"):
+                            image_url = img_elem["data-src"]
+                
+                # Fallback to brand logos if no product image found
+                if not image_url or "placeholder" in image_url.lower():
+                    logo_sources = {
+                        "msi": "https://1000logos.net/wp-content/uploads/2018/10/MSI-Logo-500x281.png",
+                        "hp": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/HP_logo_2012.svg/2048px-HP_logo_2012.svg.png",
+                        "dell": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Dell_Logo.svg/300px-Dell_Logo.svg.png",
+                        "acer": "https://static.vecteezy.com/system/resources/previews/019/766/411/non_2x/acer-logo-acer-icon-transparent-free-png.png",
+                        "asus": "https://cdn.freebiesupply.com/logos/large/2x/asus-6630-logo-png-transparent.png",
+                        "cyberpowerpc": "https://1000logos.net/wp-content/uploads/2020/09/CyberPowerPC-Logo.jpg",
+                        "ibuypower": "https://edgeup.asus.com/wp-content/uploads/2015/04/iBuyPower-Logo-resized.jpg",
+                    }
+                    image_url = logo_sources.get(brand_lower, "https://2lazy2build.vercel.app/static/logos/generic.png")
 
                 items.append({
                     "title": title,
